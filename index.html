@@ -1,23 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width">
-  <title>Water Quest</title>
-  <link href="style.css" rel="stylesheet" type="text/css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aqua Rush | charity: water</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Water Quest</h1>
-    <p class="game-instructions">Collect 20 items to complete the game!</p>
+  <main class="game-wrapper">
+    <img class="logo" src="img/cw_logo.png" alt="charity: water logo">
+    <h1>Aqua Rush</h1>
+    <p class="tagline">Help bring clean water to people who need it.</p>
+
     <div class="stats">
-      <p>Cans Collected: <span id="current-cans">0</span></p>
-      <p>Time Left: <span id="timer">30</span>s</p>
+      <div class="stat">Score: <span id="score">0</span></div>
+      <div class="stat">Time: <span id="timer">30</span>s</div>
     </div>
-    <div id="achievements" class="achievement"></div>
-    <div class="game-grid"></div>
-    <button id="start-game">Start Game</button>
-  </div>
+
+    <div id="game-grid" class="grid" aria-label="Game grid"></div>
+
+    <p id="message" class="message" role="status" aria-live="polite"></p>
+
+    <button id="start-btn" class="btn">Start Game</button>
+  </main>
+
   <script src="script.js"></script>
 </body>
 </html>
