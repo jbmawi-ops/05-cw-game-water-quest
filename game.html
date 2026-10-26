@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aqua Rush | charity: water</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="stage">
+    <div id="scene">
+      <div id="river" class="sprite" data-label="River"></div>
+      <div id="huts" class="sprite" data-label="Huts"></div>
+      <div id="well" class="sprite" data-label="Well"></div>
+      <div id="sun" class="sprite"></div>
+      <div id="player" class="sprite">
+        <div id="bucket"></div>
+      </div>
+      <div id="animals"></div>
+      <div id="popups"></div>
+      <div id="night"></div>
+      <div id="flash"></div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+      <div id="water-count">Water: <span id="water">0</span> / <span id="target">10</span></div>
+      <div id="lives" aria-label="Lives"></div>
+    </div>
+
+    <!-- Bottom-left bar -->
+    <div id="menu-bar">
+      <button id="btn-settings" aria-label="Settings">&#9881;</button>
+      <button id="btn-sound" aria-label="Toggle sound">&#128266;</button>
+      <button id="btn-howto">How-To</button>
+    </div>
+
+    <!-- Objective modal -->
+    <div id="modal-objective" class="overlay">
+      <div class="card">
+        <button class="close" data-close="objective" aria-label="Close">&times;</button>
+        <h2>Objective</h2>
+        <p>Collect Water before the sunsets.</p>
+        <p><strong>WARNING:</strong><br>Dangerous Animals May Appear</p>
+      </div>
+    </div>
+
+    <!-- How-To panel -->
+    <div id="panel-howto" class="overlay hidden">
+      <div class="card">
+        <button class="close" data-close="howto" aria-label="Close">&times;</button>
+        <h2>How to Play</h2>
+        <p>Move with arrow keys or WASD.</p>
+        <p>Walk into the river to fill your bucket, then walk to the well to deposit it.</p>
+        <p>Collect enough water before sunset. Avoid animals!</p>
+      </div>
+    </div>
+
+    <!-- Settings panel -->
+    <div id="panel-settings" class="overlay hidden">
+      <div class="card">
+        <button class="close" data-close="settings" aria-label="Close">&times;</button>
+        <h2>Settings</h2>
+        <button id="btn-restart" class="btn">Restart Game</button>
+        <a class="btn" href="index.html">Main Menu</a>
+      </div>
+    </div>
+
+    <!-- Win / Lose -->
+    <div id="screen-win" class="overlay hidden">
+      <div class="card">
+        <h2>You Did It!</h2>
+        <p>Water collected: <span id="win-water"></span></p>
+        <p>Time remaining: <span id="win-time"></span>s</p>
+        <button class="btn" id="btn-replay">Replay</button>
+      </div>
+    </div>
+
+    <div id="screen-lose" class="overlay hidden">
+      <div class="card">
+        <h2>Game Over</h2>
+        <p id="lose-reason"></p>
+        <button class="btn" id="btn-retry">Retry</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

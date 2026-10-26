@@ -1,0 +1,76 @@
+/* Aqua Rush title screen: the logo is the full-page background */
+
+:root {
+  --cw-yellow: #FFC907;
+  --line: #5f4100;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  /* same blues as the logo art so the edges blend on any screen shape */
+  background: linear-gradient(#38b6ff, #1e8be8);
+  font-family: "Courier New", Courier, monospace;
+}
+
+.title-screen {
+  position: relative;
+  min-height: 100vh;
+  background-image: url("img/aqua-rush-logo.png");
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: min(100vw, 84vh) auto;
+  image-rendering: pixelated;
+}
+
+/* Pixel-style play button, pinned under the bucket */
+.play-btn {
+  position: absolute;
+  left: 50%;
+  bottom: 4vh;
+  transform: translateX(-50%);
+  padding: 14px 56px;
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  font-weight: bold;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--line);
+  background: var(--cw-yellow);
+  border: 4px solid var(--line);
+  box-shadow: 0 6px 0 var(--line);
+  transition: background 0.15s;
+}
+
+.play-btn:hover,
+.play-btn:focus-visible {
+  background: #ffd84a;
+}
+
+.play-btn:active {
+  transform: translateX(-50%) translateY(6px);
+  box-shadow: 0 0 0 var(--line);
+}
+
+.play-btn:focus-visible {
+  outline: 4px solid #fff;
+  outline-offset: 4px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play-btn { transition: none; }
+}

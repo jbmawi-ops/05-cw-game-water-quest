@@ -1,186 +1,239 @@
+/* Aqua Run: fixed 960x540 stage, scaled to fit the window by script.js */
+
 :root {
   --cw-yellow: #FFC907;
-  --cw-yellow-dark: #E6B400;
   --cw-blue: #2E9DF7;
   --cw-light-blue: #8BD1CB;
-  --cw-green: #4FCB53;
-  --cw-dark-green: #159A48;
   --cw-red: #F5402C;
-  --cw-text: #333;
+  --cw-dark: #333;
+  --card-bg: #ede3dc;
 }
 
 * { box-sizing: border-box; }
 
 body {
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: #1b1b1b;
   font-family: "Proxima Nova", Avenir, Arial, sans-serif;
-  margin: 0;
-  padding: 16px;
-  background-color: #f0f0f0;
-  color: var(--cw-text);
+  color: var(--cw-dark);
 }
 
-.container {
-  max-width: 750px;
-  margin: 24px auto;
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  border-top: 8px solid var(--cw-yellow);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+#stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 960px;
+  height: 540px;
+  transform: translate(-50%, -50%) scale(var(--s, 1));
+  transform-origin: center;
+  overflow: hidden;
+  border-radius: 14px;
 }
 
-h1 {
-  text-align: center;
-  font-size: clamp(1.5rem, 6vw, 1.9rem);
-  font-weight: bold;
-  margin: 0 0 16px;
+#scene {
+  position: absolute;
+  inset: 0;
+  background-color: #c9a77c;
+  background-image: radial-gradient(circle at 30% 70%, #b8935f 0, transparent 40%),
+                    radial-gradient(circle at 70% 30%, #d8b88a 0, transparent 45%);
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
 }
 
-h1 img {
-  height: 50px;
-  width: auto;
-  display: block;
-  margin: 0 auto 12px;
+/* ---- Sprites: colored fallback boxes until your art loads ---- */
+.sprite {
+  position: absolute;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
 }
 
-.game-instructions {
-  font-size: clamp(1rem, 4vw, 1.15rem);
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.stats {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 24px;
-  background-color: #f5f5f5;
-  padding: 15px 0;
-  border-radius: 8px;
-  border-bottom: 4px solid var(--cw-yellow);
-}
-
-.stats p {
-  margin: 0;
-  font-size: clamp(1rem, 4.5vw, 1.2rem);
-  font-weight: bold;
-}
-
-.game-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin: 0 auto;
-  max-width: 500px;
-}
-
-.grid-cell {
-  background-color: var(--cw-light-blue);
-  border-radius: 8px;
-  aspect-ratio: 1;
+.sprite:not(.art)::after {
+  content: attr(data-label);
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  position: relative;
-  overflow: hidden;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
 }
 
-.water-can-wrapper {
+#river:not(.art) { background: var(--cw-light-blue); border-radius: 40px; }
+#huts:not(.art)  { background: #8a5a2b; border-radius: 12px; }
+#well:not(.art)  { background: #6b6b6b; border-radius: 12px; }
+#sun:not(.art)   { background: var(--cw-yellow); border-radius: 50%; }
+#player:not(.art){ background: var(--cw-red); border-radius: 8px; }
+
+#sun { width: 110px; height: 110px; }
+
+#bucket {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 70%;
-  height: 70%;
+  right: -14px;
+  bottom: 0;
+  width: 22px;
+  height: 20px;
+  background: #b7a4d9;
+  border-radius: 3px 3px 8px 8px;
+  background-size: contain;
+  background-repeat: no-repeat;
 }
+#bucket.full { background-color: var(--cw-blue); }
+#bucket.art  { background-color: transparent; }
 
-.water-can {
-  width: 100%;
-  height: 100%;
-  background-color: var(--cw-yellow); /* placeholder: delete when water-can.png is added */
+.animal {
+  position: absolute;
+  width: 50px;
+  height: 40px;
+  background: #5a3b1d;
   border-radius: 12px;
-  background-image: url('img/water-can.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  cursor: pointer;
-  animation: popUp 0.5s cubic-bezier(0.17, 0.67, 0.34, 2);
-  transform-origin: center;
+}
+.animal.art { background-color: transparent; }
+
+#player.invuln { animation: blink 0.2s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0.3; } }
+
+#night {
+  position: absolute;
+  inset: 0;
+  background: #0b1030;
+  opacity: 0;
+  pointer-events: none;
 }
 
-@keyframes popUp {
-  0%   { transform: scale(0.5); }
-  100% { transform: scale(1); }
+#flash {
+  position: absolute;
+  inset: 0;
+  background: var(--cw-red);
+  opacity: 0;
+  pointer-events: none;
 }
+#flash.on { animation: flash 0.4s ease-out; }
+@keyframes flash { 0% { opacity: 0.5; } 100% { opacity: 0; } }
 
-/* Feedback flashes */
-.grid-cell.hit  { animation: flashGood 0.3s; }
-.grid-cell.miss { animation: flashBad 0.3s; }
-
-@keyframes flashGood { 50% { background-color: var(--cw-green); } }
-@keyframes flashBad  { 50% { background-color: var(--cw-red); } }
-
-/* End-of-game message */
-.message,
-#achievements {
-  min-height: 3em;
-  margin: 20px 0 0;
-  text-align: center;
-  font-size: clamp(1rem, 4vw, 1.2rem);
+.popup {
+  position: absolute;
+  font-size: 28px;
   font-weight: bold;
+  color: var(--cw-blue);
+  text-shadow: 0 2px 0 #fff;
+  animation: rise 0.8s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes rise {
+  from { transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(-50px); opacity: 0; }
 }
 
-.message.win  { color: var(--cw-dark-green); }
-.message.lose { color: var(--cw-red); }
+/* ---- HUD ---- */
+#hud {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  padding: 8px 20px;
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom: 4px solid var(--cw-yellow);
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 20px;
+}
+#lives { font-size: 22px; color: var(--cw-red); letter-spacing: 3px; }
 
-button {
-  font-family: inherit;
-  background-color: var(--cw-yellow);
-  color: var(--cw-text);
+/* ---- Bottom-left menu bar ---- */
+#menu-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px;
+  background: #fadfb8;
+  border-top-right-radius: 10px;
+}
+#menu-bar button {
+  background: none;
   border: none;
-  padding: 14px 28px;
-  font-size: 1rem;
-  font-weight: bold;
-  border-radius: 8px;
   cursor: pointer;
-  display: block;
-  margin: 24px auto 0;
-  transition: background-color 0.2s;
+  font-size: 28px;
+  font-family: inherit;
+  color: var(--cw-dark);
+}
+#btn-howto { font-size: 16px !important; font-weight: bold; }
+
+/* ---- Overlays and cards ---- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 10;
+}
+.hidden { display: none !important; }
+
+.card {
+  position: relative;
+  width: 360px;
+  padding: 24px 28px;
+  background: var(--card-bg);
+  border: 2px solid #333;
+  border-radius: 16px;
+  text-align: center;
+}
+.card h2 { margin: 0 0 12px; font-size: 28px; }
+.card p  { margin: 8px 0; font-size: 17px; }
+
+.close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #888;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
 }
 
-button:hover,
-button:focus-visible { background-color: var(--cw-yellow-dark); }
+.btn {
+  margin-top: 14px;
+  padding: 12px 28px;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: bold;
+  background: var(--cw-yellow);
+  color: var(--cw-dark);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.btn:hover, .btn:focus-visible { background: #e6b400; }
 
-button:focus-visible {
-  outline: 3px solid var(--cw-blue);
-  outline-offset: 2px;
+/* link styled as a button (Main Menu) */
+a.btn {
+  display: inline-block;
+  margin-left: 8px;
+  text-decoration: none;
 }
 
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-@media (min-width: 600px) {
-  body { padding: 30px; }
-  .container { margin: 50px auto; padding: 40px; }
-  .game-grid { gap: 15px; }
-  h1 img { height: 60px; }
-}
-
-@media (max-width: 360px) {
-  .stats {
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-}
+button:focus-visible { outline: 3px solid var(--cw-blue); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .water-can,
-  .grid-cell.hit,
-  .grid-cell.miss { animation: none; }
+  #player.invuln, #flash.on, .popup { animation: none; }
 }
