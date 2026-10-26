@@ -51,4 +51,4 @@ function endGame() {
 }
 
 // Set up click handler for the start button
-document.getElementById('start-game').addEventListener('click', startGame);
+startBtn.addEventListener('click', startGame);
