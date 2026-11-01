@@ -129,7 +129,6 @@ function setRect(node, r) {
 }
 
 // ---- Winding river: one path drives the look AND the collision ----
-// Path is in the river box's own coordinates (0,0 to 260,300). Keep points ~52px from the edges.
 const RIVER_D = 'M 60 55 C 60 110, 110 100, 130 130 S 200 150, 190 190 S 90 200, 70 245';
 const RIVER_W = 76;   // water width
 const BANK_W = 104;   // sand edge width
@@ -170,12 +169,12 @@ setRect(bank, riverZone);
 shapeLikeRiver(bank, BANK_W);
 shapeLikeRiver(el.river, RIVER_W);
 
-// ---- Movement with solid collision (X then Y avoids sticking) ----
+// ---- Movement with solid collision ----
 function movePlayer(dt) {
   let dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
   let dy = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
   if (dx === 0 && dy === 0) return;
-  const len = Math.hypot(dx, dy); // normalize so diagonals aren't faster
+  const len = Math.hypot(dx, dy);
   dx /= len; dy /= len;
 
   const oldX = player.x;
@@ -205,7 +204,6 @@ function spawnAnimal() {
   animals.push({ x, y, w: ANIMAL_SIZE, h: ANIMAL_SIZE, life: ANIMAL_LIFETIME, el: node });
 }
 
-// Move toward (dx, dy) but never into the huts or well; slide around them instead
 function moveAnimal(a, dx, dy, dt) {
   const step = ANIMAL_SPEED * dt;
   const ox = a.x, oy = a.y;
@@ -213,7 +211,6 @@ function moveAnimal(a, dx, dy, dt) {
   if (animalSolids.some((s) => overlap(a, s))) a.x = ox;
   a.y += dy * step;
   if (animalSolids.some((s) => overlap(a, s))) a.y = oy;
-  // pinned head-on against a wall: slide sideways around it
   if (a.x === ox && a.y === oy) {
     a.slide = a.slide || (Math.random() < 0.5 ? 1 : -1);
     a.x += -dy * a.slide * step;
@@ -243,7 +240,7 @@ function updateAnimals(dt) {
 
     if (!remove && invulnTimer <= 0 && !hidden && overlap(a, player)) {
       hitPlayer();
-      remove = true; // the animal runs off after a hit
+      remove = true;
     }
     if (remove) a.el.remove();
     return !remove;
@@ -262,7 +259,7 @@ function hitPlayer() {
   fillTimer = 0;
   play('hit');
   el.flash.classList.remove('on');
-  void el.flash.offsetWidth; // restart animation
+  void el.flash.offsetWidth;
   el.flash.classList.add('on');
 }
 
@@ -285,13 +282,13 @@ function showPlusOne() {
   const p = document.createElement('div');
   p.className = 'popup';
   p.textContent = '+1';
-  p.style.left = well.x + well.w / 2 - 12 + 'px';
-  p.style.top = well.y - 20 + 'px';
+  p.style.left = (well.x + well.w / 2 - 12) + 'px';
+  p.style.top = (well.y - 20) + 'px';
   el.popups.appendChild(p);
   setTimeout(() => p.remove(), 800);
 }
 
-// ---- Main update (all timers run on dt, so pausing freezes everything) ----
+// ---- Main update ----
 function update(dt) {
   if (state !== 'PLAYING') return;
 
@@ -305,11 +302,10 @@ function update(dt) {
 
   const frozen = filling || stunTimer > 0;
   if (!frozen) movePlayer(dt);
-  hidden = overlap(player, huts);   // inside the huts = safe from animals
+  hidden = overlap(player, huts);
   checkZones();
   updateAnimals(dt);
 
-  // Win/lose checks (win first, so a last-second deposit counts)
   if (water >= TARGET_WATER) return endGame(true);
   if (lives <= 0) return endGame(false, 'Caught by animals');
   if (elapsed >= ROUND_DURATION) return endGame(false, 'Sunset');
@@ -358,7 +354,6 @@ function render() {
     a.el.style.top = a.y + 'px';
   });
 
-  // Sun: quarter arc from top-center down to the right horizon
   const p = clamp(elapsed / ROUND_DURATION, 0, 1);
   const ang = p * (Math.PI / 2);
   const sunX = W / 2 + 380 * Math.sin(ang) - 55;
@@ -375,7 +370,7 @@ function render() {
 // ---- Loop ----
 let last = performance.now();
 function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); // clamp so tab-switching doesn't jump
+  const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   update(dt);
   render();
@@ -385,7 +380,7 @@ function frame(now) {
 // ---- State changes from UI ----
 function startPlaying() {
   hideAll();
-  Object.keys(keys).forEach((k) => (keys[k] = false)); // ignore keys held while the card was open
+  Object.keys(keys).forEach((k) => (keys[k] = false));
   el.hud.classList.remove('hidden');
   state = 'PLAYING';
   if (!muted) ambience.play().catch(() => {});
@@ -429,7 +424,7 @@ const keyMap = {
 window.addEventListener('keydown', (e) => {
   const k = keyMap[e.key];
   if (!k) return;
-  if (state === 'PLAYING') e.preventDefault(); // stop arrow keys scrolling the page
+  if (state === 'PLAYING') e.preventDefault();
   keys[k] = true;
 });
 window.addEventListener('keyup', (e) => {
@@ -438,7 +433,7 @@ window.addEventListener('keyup', (e) => {
 });
 window.addEventListener('blur', () => Object.keys(keys).forEach((k) => (keys[k] = false)));
 
-// ---- Scale the stage to fit the window ----
+// ---- Scale stage ----
 function fitStage() {
   const s = Math.min(window.innerWidth / W, window.innerHeight / H);
   stage.style.setProperty('--s', s);
@@ -450,36 +445,3 @@ animals = [];
 fitStage();
 resetGame();
 requestAnimationFrame(frame);
-
-// Update line 454 to:
-const caughtSound = new Audio('sounds/hurt.mp3');
-function checkAnimalCollision() {
-  animals.forEach(animal => {
-    // Example distance or bounding box collision check
-    if (isColliding(player, animal)) {
-      
-      // Rewind to start and play the sound
-      caughtSound.currentTime = 0;
-      caughtSound.play();
-
-      // Trigger your game over or reset logic
-      handleGameOver();
-    }
-  });
-}
-let isGameOver = false;
-
-function checkAnimalCollision() {
-  if (isGameOver) return; // Don't check or play sound if already caught
-
-  animals.forEach(animal => {
-    if (isColliding(player, animal)) {
-      isGameOver = true;
-      
-      caughtSound.currentTime = 0;
-      caughtSound.play();
-
-      console.log("Player was caught by an animal!");
-    }
-  });
-}
