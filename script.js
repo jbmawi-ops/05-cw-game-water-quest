@@ -450,3 +450,35 @@ animals = [];
 fitStage();
 resetGame();
 requestAnimationFrame(frame);
+
+const caughtSound = new Audio('hurt.mp3'); // Replace with your sound file name
+function checkAnimalCollision() {
+  animals.forEach(animal => {
+    // Example distance or bounding box collision check
+    if (isColliding(player, animal)) {
+      
+      // Rewind to start and play the sound
+      caughtSound.currentTime = 0;
+      caughtSound.play();
+
+      // Trigger your game over or reset logic
+      handleGameOver();
+    }
+  });
+}
+let isGameOver = false;
+
+function checkAnimalCollision() {
+  if (isGameOver) return; // Don't check or play sound if already caught
+
+  animals.forEach(animal => {
+    if (isColliding(player, animal)) {
+      isGameOver = true;
+      
+      caughtSound.currentTime = 0;
+      caughtSound.play();
+
+      console.log("Player was caught by an animal!");
+    }
+  });
+}
