@@ -378,3 +378,44 @@ animals = [];
 fitStage();
 resetGame();
 requestAnimationFrame(frame);
+
+// ---- Winding river: one path drives the look AND the collision ----
+const RIVER_D = 'M 60 55 C 60 110, 110 100, 130 130 S 200 150, 190 190 S 90 200, 70 245';
+const RIVER_W = 76;   // water width
+const BANK_W = 104;   // sand edge width
+
+const riverPts = (() => {
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  p.setAttribute('d', RIVER_D);
+  const len = p.getTotalLength(), pts = [];
+  for (let l = 0; l <= len; l += 6) {
+    const pt = p.getPointAtLength(l);
+    pts.push({ x: riverZone.x + pt.x, y: riverZone.y + pt.y });
+  }
+  return pts;
+})();
+
+function inRiver(r) {
+  const reach = RIVER_W / 2;
+  return riverPts.some((p) => {
+    const dx = p.x - clamp(p.x, r.x, r.x + r.w);
+    const dy = p.y - clamp(p.y, r.y, r.y + r.h);
+    return dx * dx + dy * dy <= reach * reach;
+  });
+}
+
+function strokeMask(width) {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${riverZone.w} ${riverZone.h}'><path d='${RIVER_D}' fill='none' stroke='white' stroke-width='${width}' stroke-linecap='round' stroke-linejoin='round'/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+function shapeLikeRiver(node, width) {
+  node.style.webkitMaskImage = node.style.maskImage = strokeMask(width);
+  node.style.webkitMaskSize = node.style.maskSize = '100% 100%';
+  node.style.webkitMaskRepeat = node.style.maskRepeat = 'no-repeat';
+}
+const bank = document.createElement('div');
+bank.id = 'river-bank';
+el.river.before(bank);
+setRect(bank, riverZone);
+shapeLikeRiver(bank, BANK_W);
+shapeLikeRiver(el.river, RIVER_W);

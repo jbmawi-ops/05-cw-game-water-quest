@@ -237,3 +237,12 @@ button:focus-visible { outline: 3px solid var(--cw-blue); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   #player.invuln, #flash.on, .popup { animation: none; }
 }
+#river.art { background-size: cover; }
+#river.art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(139, 209, 203, 0.45), rgba(46, 157, 247, 0.25));
+  pointer-events: none;
+}
+#river-bank { position: absolute; background: #dcc391; pointer-events: none; }
