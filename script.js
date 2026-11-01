@@ -1,4 +1,4 @@
-// ================= Aqua Run =================
+// ================= Aqua Rush =================
 const $ = (s) => document.querySelector(s);
 
 // ---- Constants (tweak these to balance the game) ----
@@ -8,6 +8,7 @@ const TARGET_WATER = 10;
 const MAX_LIVES = 3;
 const PLAYER_SPEED = 220;     // px/sec
 const ANIMAL_SPEED = 110;     // must stay below PLAYER_SPEED
+const ANIMAL_SIZE = 56;       // animal sprite + hitbox size (px)
 const FILL_TIME = 1;          // seconds frozen while filling
 const STUN_TIME = 1;
 const INVULN_TIME = 2;
@@ -16,12 +17,13 @@ const SPAWN_MIN = 10, SPAWN_MAX = 20;
 const ANIMAL_LIFETIME = 10;
 
 // ---- World layout (game coordinates) ----
-const riverZone = { x: 20,  y: 20,  w: 260, h: 300 };
+const riverZone = { x: 20,  y: 20,  w: 260, h: 300 };   // box the winding river is drawn inside
 const huts      = { x: 740, y: 60,  w: 190, h: 170 };
-const well      = { x: 780, y: 340, w: 110, h: 120 };
+const well      = { x: 770, y: 350, w: 140, h: 105 };
 const wellZone  = { x: well.x - 30, y: well.y - 30, w: well.w + 60, h: well.h + 60 };
-const solids = [huts, well];
-const START_POS = { x: 200, y: 300 };
+const solids = [well];               // the player can't walk through the well (but can enter the huts)
+const animalSolids = [huts, well];   // animals can't enter the huts or the well
+const START_POS = { x: 360, y: 300 };
 
 // ---- Elements ----
 const stage = $('#stage');
@@ -57,8 +59,14 @@ function loadBucketArt(cls, url) {
 const bucketArt = {};
 loadBucketArt('empty', 'img/bucket-empty.png');
 loadBucketArt('full', 'img/bucket-full.png');
-const animalArt = { url: null };
-{ const img = new Image(); img.onload = () => (animalArt.url = 'img/animal.png'); img.src = 'img/animal.png'; }
+
+// Animal art: img/animal1.png ... animal4.png, one picked at random per animal
+const animalArt = [];
+['animal1', 'animal2', 'animal3', 'animal4'].forEach((n) => {
+  const img = new Image();
+  img.onload = () => animalArt.push(`img/${n}.png`);
+  img.src = `img/${n}.png`;
+});
 
 // ---- Sound (files are optional; missing files are ignored) ----
 let muted = false;
@@ -68,6 +76,7 @@ const sounds = {};
 });
 const ambience = new Audio('sounds/ambience.mp3');
 ambience.loop = true;
+ambience.volume = 0.4;
 function play(name) {
   if (muted || !sounds[name]) return;
   sounds[name].currentTime = 0;
@@ -76,7 +85,7 @@ function play(name) {
 
 // ---- State ----
 let state = 'START';          // START | PLAYING | PAUSED | WIN | LOSE
-let player, bucketFull, water, lives, elapsed;
+let player, bucketFull, water, lives, elapsed, hidden;
 let fillTimer, filling, stunTimer, invulnTimer, spawnTimer, animals;
 const keys = { left: false, right: false, up: false, down: false };
 
@@ -90,6 +99,7 @@ function resetGame() {
   filling = false;
   stunTimer = 0;
   invulnTimer = 0;
+  hidden = false;
   spawnTimer = FIRST_SPAWN;
   animals.forEach((a) => a.el.remove());
   animals = [];
@@ -118,6 +128,48 @@ function setRect(node, r) {
   node.style.height = r.h + 'px';
 }
 
+// ---- Winding river: one path drives the look AND the collision ----
+// Path is in the river box's own coordinates (0,0 to 260,300). Keep points ~52px from the edges.
+const RIVER_D = 'M 60 55 C 60 110, 110 100, 130 130 S 200 150, 190 190 S 90 200, 70 245';
+const RIVER_W = 76;   // water width
+const BANK_W = 104;   // sand edge width
+
+const riverPts = (() => {
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  p.setAttribute('d', RIVER_D);
+  const len = p.getTotalLength(), pts = [];
+  for (let l = 0; l <= len; l += 6) {
+    const pt = p.getPointAtLength(l);
+    pts.push({ x: riverZone.x + pt.x, y: riverZone.y + pt.y });
+  }
+  return pts;
+})();
+
+function inRiver(r) {
+  const reach = RIVER_W / 2;
+  return riverPts.some((p) => {
+    const dx = p.x - clamp(p.x, r.x, r.x + r.w);
+    const dy = p.y - clamp(p.y, r.y, r.y + r.h);
+    return dx * dx + dy * dy <= reach * reach;
+  });
+}
+
+function strokeMask(width) {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${riverZone.w} ${riverZone.h}'><path d='${RIVER_D}' fill='none' stroke='white' stroke-width='${width}' stroke-linecap='round' stroke-linejoin='round'/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+function shapeLikeRiver(node, width) {
+  node.style.webkitMaskImage = node.style.maskImage = strokeMask(width);
+  node.style.webkitMaskSize = node.style.maskSize = '100% 100%';
+  node.style.webkitMaskRepeat = node.style.maskRepeat = 'no-repeat';
+}
+const bank = document.createElement('div');
+bank.id = 'river-bank';
+el.river.before(bank);
+setRect(bank, riverZone);
+shapeLikeRiver(bank, BANK_W);
+shapeLikeRiver(el.river, RIVER_W);
+
 // ---- Movement with solid collision (X then Y avoids sticking) ----
 function movePlayer(dt) {
   let dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
@@ -145,12 +197,30 @@ function spawnAnimal() {
   else { x = -50; y = rand(0, H); }
   const node = document.createElement('div');
   node.className = 'animal';
-  if (animalArt.url) {
-    node.style.backgroundImage = `url(${animalArt.url})`;
+  if (animalArt.length) {
+    node.style.backgroundImage = `url(${animalArt[Math.floor(Math.random() * animalArt.length)]})`;
     node.classList.add('art');
   }
   el.animals.appendChild(node);
-  animals.push({ x, y, w: 50, h: 40, life: ANIMAL_LIFETIME, el: node });
+  animals.push({ x, y, w: ANIMAL_SIZE, h: ANIMAL_SIZE, life: ANIMAL_LIFETIME, el: node });
+}
+
+// Move toward (dx, dy) but never into the huts or well; slide around them instead
+function moveAnimal(a, dx, dy, dt) {
+  const step = ANIMAL_SPEED * dt;
+  const ox = a.x, oy = a.y;
+  a.x += dx * step;
+  if (animalSolids.some((s) => overlap(a, s))) a.x = ox;
+  a.y += dy * step;
+  if (animalSolids.some((s) => overlap(a, s))) a.y = oy;
+  // pinned head-on against a wall: slide sideways around it
+  if (a.x === ox && a.y === oy) {
+    a.slide = a.slide || (Math.random() < 0.5 ? 1 : -1);
+    a.x += -dy * a.slide * step;
+    if (animalSolids.some((s) => overlap(a, s))) a.x = ox;
+    a.y += dx * a.slide * step;
+    if (animalSolids.some((s) => overlap(a, s))) a.y = oy;
+  }
 }
 
 function updateAnimals(dt) {
@@ -167,12 +237,11 @@ function updateAnimals(dt) {
     a.life -= dt;
     const ax = a.x + a.w / 2, ay = a.y + a.h / 2;
     const dist = Math.hypot(px - ax, py - ay) || 1;
-    a.x += ((px - ax) / dist) * ANIMAL_SPEED * dt;
-    a.y += ((py - ay) / dist) * ANIMAL_SPEED * dt;
+    moveAnimal(a, (px - ax) / dist, (py - ay) / dist, dt);
 
     let remove = a.life <= 0;
 
-    if (!remove && invulnTimer <= 0 && overlap(a, player)) {
+    if (!remove && invulnTimer <= 0 && !hidden && overlap(a, player)) {
       hitPlayer();
       remove = true; // the animal runs off after a hit
     }
@@ -199,7 +268,7 @@ function hitPlayer() {
 
 // ---- Zones ----
 function checkZones() {
-  if (!bucketFull && !filling && overlap(player, riverZone)) {
+  if (!bucketFull && !filling && stunTimer <= 0 && inRiver(player)) {
     filling = true;
     fillTimer = FILL_TIME;
     play('fill');
@@ -236,6 +305,7 @@ function update(dt) {
 
   const frozen = filling || stunTimer > 0;
   if (!frozen) movePlayer(dt);
+  hidden = overlap(player, huts);   // inside the huts = safe from animals
   checkZones();
   updateAnimals(dt);
 
@@ -280,6 +350,7 @@ function render() {
   el.player.style.width = player.w + 'px';
   el.player.style.height = player.h + 'px';
   el.player.classList.toggle('invuln', invulnTimer > 0);
+  el.player.classList.toggle('in-hut', hidden);
   renderBucket();
 
   animals.forEach((a) => {
@@ -298,7 +369,7 @@ function render() {
 
   el.water.textContent = water;
   el.target.textContent = TARGET_WATER;
-  el.lives.textContent = '\u2665'.repeat(Math.max(0, lives));
+  el.lives.textContent = '♥'.repeat(Math.max(0, lives));
 }
 
 // ---- Loop ----
@@ -314,6 +385,7 @@ function frame(now) {
 // ---- State changes from UI ----
 function startPlaying() {
   hideAll();
+  Object.keys(keys).forEach((k) => (keys[k] = false)); // ignore keys held while the card was open
   el.hud.classList.remove('hidden');
   state = 'PLAYING';
   if (!muted) ambience.play().catch(() => {});
@@ -378,44 +450,3 @@ animals = [];
 fitStage();
 resetGame();
 requestAnimationFrame(frame);
-
-// ---- Winding river: one path drives the look AND the collision ----
-const RIVER_D = 'M 60 55 C 60 110, 110 100, 130 130 S 200 150, 190 190 S 90 200, 70 245';
-const RIVER_W = 76;   // water width
-const BANK_W = 104;   // sand edge width
-
-const riverPts = (() => {
-  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  p.setAttribute('d', RIVER_D);
-  const len = p.getTotalLength(), pts = [];
-  for (let l = 0; l <= len; l += 6) {
-    const pt = p.getPointAtLength(l);
-    pts.push({ x: riverZone.x + pt.x, y: riverZone.y + pt.y });
-  }
-  return pts;
-})();
-
-function inRiver(r) {
-  const reach = RIVER_W / 2;
-  return riverPts.some((p) => {
-    const dx = p.x - clamp(p.x, r.x, r.x + r.w);
-    const dy = p.y - clamp(p.y, r.y, r.y + r.h);
-    return dx * dx + dy * dy <= reach * reach;
-  });
-}
-
-function strokeMask(width) {
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${riverZone.w} ${riverZone.h}'><path d='${RIVER_D}' fill='none' stroke='white' stroke-width='${width}' stroke-linecap='round' stroke-linejoin='round'/></svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-}
-function shapeLikeRiver(node, width) {
-  node.style.webkitMaskImage = node.style.maskImage = strokeMask(width);
-  node.style.webkitMaskSize = node.style.maskSize = '100% 100%';
-  node.style.webkitMaskRepeat = node.style.maskRepeat = 'no-repeat';
-}
-const bank = document.createElement('div');
-bank.id = 'river-bank';
-el.river.before(bank);
-setRect(bank, riverZone);
-shapeLikeRiver(bank, BANK_W);
-shapeLikeRiver(el.river, RIVER_W);

@@ -247,3 +247,4 @@ button:focus-visible { outline: 3px solid var(--cw-blue); outline-offset: 2px; }
   pointer-events: none;
 }
 #river-bank { position: absolute; background: #dcc391; pointer-events: none; }
+#player.in-hut { opacity: 0.4; }
