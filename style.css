@@ -73,8 +73,8 @@ body {
 
 #bucket {
   position: absolute;
-  right: -14px;
-  bottom: 0;
+  right: -6px;
+  bottom: 6px;
   width: 22px;
   height: 20px;
   background: #b7a4d9;
@@ -82,13 +82,11 @@ body {
   background-size: contain;
   background-repeat: no-repeat;
 }
-#bucket.full { background-color: var(--cw-blue); }
-#bucket.art  { background-color: transparent; }
 
 .animal {
   position: absolute;
-  width: 50px;
-  height: 40px;
+  width: 56px;
+  height: 56px;
   background: #5a3b1d;
   border-radius: 12px;
   background-size: contain;
@@ -99,6 +97,9 @@ body {
 
 #player.invuln { animation: blink 0.2s steps(2) infinite; }
 @keyframes blink { 50% { opacity: 0.3; } }
+
+/* player fades while hiding inside the huts */
+#player.in-hut { opacity: 0.4; }
 
 #night {
   position: absolute;
