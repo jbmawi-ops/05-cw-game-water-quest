@@ -451,7 +451,8 @@ fitStage();
 resetGame();
 requestAnimationFrame(frame);
 
-const caughtSound = new Audio('hurt.mp3'); // Replace with your sound file name
+// Update line 454 to:
+const caughtSound = new Audio('sounds/hurt.mp3');
 function checkAnimalCollision() {
   animals.forEach(animal => {
     // Example distance or bounding box collision check
