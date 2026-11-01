@@ -71,7 +71,7 @@ const animalArt = [];
 // ---- Sound (files are optional; missing files are ignored) ----
 let muted = false;
 const sounds = {};
-['fill', 'deposit', 'hit', 'spill', 'win', 'lose'].forEach((n) => {
+['fill', 'deposit', 'hit', 'spill', 'win', 'lose', 'hurt'].forEach((n) => {
   sounds[n] = new Audio(`sounds/${n}.mp3`);
 });
 const ambience = new Audio('sounds/ambience.mp3');
@@ -258,6 +258,7 @@ function hitPlayer() {
   filling = false;
   fillTimer = 0;
   play('hit');
+  play('hurt');
   el.flash.classList.remove('on');
   void el.flash.offsetWidth;
   el.flash.classList.add('on');
